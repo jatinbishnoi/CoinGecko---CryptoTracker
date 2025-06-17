@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { fetchCoinData } from "../../services/fetchCoinData";
 import { useQuery } from "@tanstack/react-query";
-//import { CurrencyContext } from "../../context/CurrencyContext";
-import currencyStore from '../../state/store';
-function CoinTable() {
+import { useNavigate } from "react-router-dom";
+import currencyStore from "../../state/store";
 
-    const { currency } = currencyStore();;
+function CoinTable() {
+  const { currency } = currencyStore(); // Zustand state
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
 
   const {
@@ -14,84 +15,93 @@ function CoinTable() {
     isError,
     error,
   } = useQuery({
-    queryKey: ['coins', page,currency],
+    queryKey: ["coins", page, currency],
     queryFn: () => fetchCoinData(page, currency),
     staleTime: 1000 * 60 * 2,
     cacheTime: 1000 * 60 * 5,
     keepPreviousData: true,
   });
 
+  function handleCoinRedirect(id) {
+    navigate(`/details/${id}`);
+  }
+
   if (isError) {
-    return <div className="text-red-500 font-semibold text-center mt-5">Error: {error.message}</div>;
+    return (
+      <div className="text-red-500 font-semibold text-center mt-5">
+        Error: {error.message}
+      </div>
+    );
   }
 
   return (
-    <div className="my-8 px-4 w-full max-w-[1000px] mx-auto">
-      {/* Table Header (hidden on small screens) */}
-      <div className="hidden sm:flex w-full bg-yellow-400 text-black py-4 px-3 font-bold rounded-md shadow text-center">
-        <div className="w-[35%]">Coin</div>
-        <div className="w-[25%]">Price</div>
-        <div className="w-[20%]">24h Change</div>
-        <div className="w-[20%]">Market Cap</div>
+    <div className="my-5 flex flex-col items-center justify-center gap-5 w-[80vw] mx-auto">
+      {/* Table Header */}
+      <div className="w-full bg-yellow-400 text-black flex py-4 px-2 font-semibold items-center justify-center rounded">
+        <div className="basis-[35%]">Coin</div>
+        <div className="basis-[25%]">Price</div>
+        <div className="basis-[20%]">24h Change</div>
+        <div className="basis-[20%]">Market Cap</div>
       </div>
 
-      {/* Loading */}
-      {isLoading && <div className="text-white text-xl text-center mt-5">Loading...</div>}
+      {/* Table Rows */}
+      <div className="flex flex-col w-full">
+        {isLoading && <div className="text-white text-lg text-center">Loading...</div>}
 
-      {/* Coin List */}
-      <div className="flex flex-col w-full gap-3 mt-3">
         {data &&
           data.map((coin) => (
             <div
+              onClick={() => handleCoinRedirect(coin.id)}
               key={coin.id}
-              className="w-full bg-slate-800 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 px-3 rounded-md border border-gray-700 hover:bg-slate-700 transition-all duration-300"
+              className="w-full bg-slate-800 text-white flex py-4 px-2 font-semibold items-center justify-between cursor-pointer hover:bg-slate-700 rounded border-b border-gray-600 transition"
             >
               {/* Coin Info */}
-              <div className="flex items-center gap-3 mb-3 sm:mb-0 w-full sm:w-[35%]">
-                <img src={coin.image} alt={coin.name} className="w-10 h-10 rounded-full" />
+              <div className="flex items-center gap-3 basis-[35%]">
+                <img
+                  src={coin.image}
+                  alt={coin.name}
+                  className="w-[3rem] h-[3rem] rounded-full"
+                />
                 <div className="flex flex-col">
-                  <span className="font-bold text-lg">{coin.name}</span>
-                  <span className="text-xs text-gray-300 uppercase">{coin.symbol}</span>
+                  <div className="text-xl font-bold">{coin.name}</div>
+                  <div className="text-sm uppercase text-gray-300">{coin.symbol}</div>
                 </div>
               </div>
 
-              {/* Price */}
-              <div className="flex justify-between sm:justify-center sm:w-[25%] text-sm sm:text-base mb-1 sm:mb-0">
-                <span className="font-semibold sm:hidden">Price:</span>
-                <span className="ml-2 sm:ml-0">{coin.current_price.toLocaleString()}</span>
+              {/* Coin Price */}
+              <div className="basis-[25%] text-sm sm:text-base">
+                {coin.current_price.toLocaleString()}
               </div>
 
               {/* 24h Change */}
               <div
-                className={`flex justify-between sm:justify-center sm:w-[20%] text-sm sm:text-base mb-1 sm:mb-0 ${
-                  coin.price_change_24h >= 0 ? 'text-green-400' : 'text-red-400'
+                className={`basis-[20%] text-sm sm:text-base ${
+                  coin.price_change_24h >= 0 ? "text-green-400" : "text-red-400"
                 }`}
               >
-                <span className="font-semibold sm:hidden">24h:</span>
-                <span className="ml-2 sm:ml-0">{coin.price_change_24h.toFixed(2)}</span>
+                {coin.price_change_24h.toFixed(2)}
               </div>
 
               {/* Market Cap */}
-              <div className="flex justify-between sm:justify-center sm:w-[20%] text-sm sm:text-base">
-                <span className="font-semibold sm:hidden">Market Cap:</span>
-                <span className="ml-2 sm:ml-0">{coin.market_cap.toLocaleString()}</span>
+              <div className="basis-[20%] text-sm sm:text-base">
+                {coin.market_cap.toLocaleString()}
               </div>
             </div>
           ))}
       </div>
 
-      {/* Pagination */}
-      <div className="mt-6 flex justify-center gap-4 flex-wrap">
+      {/* Pagination Controls */}
+      <div className="flex gap-4 justify-center items-center">
         <button
           disabled={page === 1}
           onClick={() => setPage(page - 1)}
-          className="bg-indigo-600 px-6 py-2 rounded text-white disabled:bg-gray-400 transition"
+          className="bg-indigo-600 px-6 py-2 rounded text-white disabled:bg-gray-400 text-lg"
         >
           Prev
         </button>
         <button
           onClick={() => setPage(page + 1)}
-          className="bg-indigo-600 px-6 py-2 rounded text-white transition"
+          className="bg-indigo-600 px-6 py-2 rounded text-white text-lg"
         >
           Next
         </button>
