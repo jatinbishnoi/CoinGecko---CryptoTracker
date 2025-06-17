@@ -3,6 +3,7 @@ import { fetchCoinData } from "../../services/fetchCoinData";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import currencyStore from "../../state/store";
+import PageLoader from "../PageLoader/PageLoader";
 
 function CoinTable() {
   const { currency } = currencyStore(); // Zustand state
@@ -34,6 +35,10 @@ function CoinTable() {
     );
   }
 
+  if (isLoading) {
+    return <PageLoader />;
+  }
+
   return (
     <div className="my-5 flex flex-col items-center justify-center gap-5 w-[80vw] mx-auto">
       {/* Table Header */}
@@ -46,8 +51,6 @@ function CoinTable() {
 
       {/* Table Rows */}
       <div className="flex flex-col w-full">
-        {isLoading && <div className="text-white text-lg text-center">Loading...</div>}
-
         {data &&
           data.map((coin) => (
             <div
@@ -61,6 +64,7 @@ function CoinTable() {
                   src={coin.image}
                   alt={coin.name}
                   className="w-[3rem] h-[3rem] rounded-full"
+                  loading="lazy"
                 />
                 <div className="flex flex-col">
                   <div className="text-xl font-bold">{coin.name}</div>
