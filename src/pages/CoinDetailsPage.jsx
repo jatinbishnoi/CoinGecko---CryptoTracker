@@ -1,25 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
-import { fetchCoinDetails } from "../services/fetchCoinDetails";
-import currencyStore from '../state/store';
 import parse from 'html-react-parser';
 import PageLoader from "../components/PageLoader/PageLoader";
+import CoinInfoContainer from "../components/CoinInfo/CoinInfoContainer";
+import useFetchCoin from "../hooks/useFetchCoin";
 
 function CoinDetailsPage() {
   const { coinId } = useParams();
-  const { currency } = currencyStore();
 
-  const {
-    isError,
-    isLoading,
-    data: coin,
-    error
-  } = useQuery({
-    queryKey: ["coin", coinId],
-    queryFn: () => fetchCoinDetails(coinId),
-    cacheTime: 1000 * 60 * 2,
-    staleTime: 1000 * 60 * 2,
-  });
+  const { isLoading, isError, coin, currency, error } = useFetchCoin(coinId);
 
   if (isLoading) {
     return <PageLoader />;
@@ -46,7 +34,6 @@ function CoinDetailsPage() {
     if (coin?.description?.en) {
       parsedDescription = parse(coin.description.en);
     }
-  // eslint-disable-next-line no-unused-vars
   } catch (err) {
     parsedDescription = "Failed to load description.";
   }
@@ -58,7 +45,7 @@ function CoinDetailsPage() {
   const formattedPrice = price
     ? new Intl.NumberFormat("en-IN", {
         style: "currency",
-        currency: currency.toUpperCase(),
+        currency: typeof currency === "string" ? currency.toUpperCase() : "USD",
         maximumFractionDigits: 2,
       }).format(price)
     : "N/A";
@@ -96,9 +83,8 @@ function CoinDetailsPage() {
       </div>
 
       {/* Right Panel */}
-      <div className="md:w-2/3 w-full p-6">
-        <h2 className="text-2xl font-bold mb-4">Coin Information</h2>
-        <p>More stats and charts coming soon...</p>
+      <div className="md:w-2/3 w-full p-4">
+        <CoinInfoContainer coinId={coinId} />
       </div>
     </div>
   );
